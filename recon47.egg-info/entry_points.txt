@@ -1,0 +1,2 @@
+[console_scripts]
+recon47 = recon47.main:main

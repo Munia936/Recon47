@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recon47 Report — testphp.vulnweb.com</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
+:root {
+  --bg:#050a0e; --bg2:#080f18; --bg3:#0a1520; --bg4:#0d1f2d;
+  --green:#00ff9d; --cyan:#00d4ff; --red:#ff1744; --yellow:#ffcc00;
+  --magenta:#ff00ff; --dim:#3a5a6a; --text:#9abccc; --border:#0f2535;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
+      font-size:15px;line-height:1.5;min-height:100vh}
+/* scanline overlay */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,
+  rgba(0,255,157,.012) 3px,rgba(0,255,157,.012) 4px)}
+/* noise grain */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
+  opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px}
+/* top pulse bar */
+.pulse-bar{position:fixed;top:0;left:0;right:0;height:2px;z-index:9999;
+  background:linear-gradient(90deg,transparent 0%,var(--green) 50%,transparent 100%);
+  animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+header{background:linear-gradient(180deg,#030810,var(--bg2));
+  border-bottom:1px solid var(--border);padding:32px 40px 24px;position:relative;overflow:hidden}
+header::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 50% -20%,rgba(0,255,157,.07),transparent)}
+.logo{font-family:'Share Tech Mono',monospace;font-size:3rem;
+  color:var(--green);letter-spacing:10px;
+  text-shadow:0 0 30px rgba(0,255,157,.6),0 0 60px rgba(0,255,157,.2);
+  position:relative}
+.logo span{color:var(--cyan)}
+.tagline{font-family:'Share Tech Mono',monospace;font-size:.7rem;
+  letter-spacing:4px;color:var(--dim);margin-top:6px}
+.meta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;position:relative}
+.meta-chip{background:var(--bg4);border:1px solid var(--border);
+  border-left:3px solid var(--cyan);padding:8px 16px;border-radius:1px;
+  min-width:140px}
+.meta-chip label{display:block;font-size:.6rem;letter-spacing:3px;
+  color:var(--dim);text-transform:uppercase;margin-bottom:2px}
+.meta-chip span{font-family:'Share Tech Mono',monospace;color:var(--cyan);font-size:.85rem}
+main{max-width:1140px;margin:0 auto;padding:28px 36px 60px}
+.card{background:var(--bg2);border:1px solid var(--border);
+  border-top:2px solid var(--cyan);margin-bottom:20px;
+  border-radius:1px;overflow:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.card-hdr{background:var(--bg4);padding:11px 20px;
+  font-family:'Share Tech Mono',monospace;font-size:.75rem;
+  letter-spacing:3px;color:var(--cyan);
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border)}
+.card-body{padding:18px 20px}
+.ai-card{border-top-color:var(--magenta)}
+.ai-hdr{color:var(--magenta)!important}
+.ai-body pre{font-family:'Share Tech Mono',monospace;font-size:.75rem;
+  color:#d4aaf0;white-space:pre-wrap;line-height:1.7}
+table{width:100%;border-collapse:collapse}
+td{padding:7px 12px;border-bottom:1px solid var(--border);font-size:.88rem}
+td:first-child{color:var(--dim);font-family:'Share Tech Mono',monospace;
+  font-size:.7rem;letter-spacing:1px;width:200px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(0,212,255,.03)}
+.sev-bar{display:flex;flex-wrap:wrap;gap:10px;padding:4px 0}
+.sev-badge{padding:10px 18px;border-radius:2px;min-width:80px;text-align:center;
+  font-family:'Share Tech Mono',monospace}
+.sev-badge span{display:block;font-size:1.8rem;font-weight:700;line-height:1}
+.sev-badge em{font-style:normal;font-size:.6rem;letter-spacing:2px}
+.crawl-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sub-hdr{font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  letter-spacing:3px;color:var(--cyan);margin-bottom:8px;
+  border-bottom:1px solid var(--border);padding-bottom:4px}
+.endpoint{font-family:'Share Tech Mono',monospace;font-size:.7rem;
+  color:var(--text);padding:2px 0;word-break:break-all;
+  border-bottom:1px dashed var(--border)}
+.endpoint.js{color:#ffd54f}
+.endpoint.int{color:var(--red)}
+.param-badge{display:inline-block;background:rgba(0,212,255,.07);
+  border:1px solid rgba(0,212,255,.2);color:var(--cyan);
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  padding:2px 8px;margin:2px;border-radius:1px}
+.vuln-item{background:var(--bg3);padding:14px;margin-bottom:10px;
+  border-radius:1px}
+.vuln-title{font-size:1rem;font-weight:600;color:#e0e0e0;margin-bottom:6px;
+  display:flex;align-items:center;gap:10px}
+.sev-tag{padding:2px 8px;border-radius:1px;font-family:'Share Tech Mono',monospace;
+  font-size:.65rem;letter-spacing:1px;font-weight:700}
+.vuln-desc{font-size:.85rem;color:var(--text);margin-bottom:4px}
+.vuln-ev{font-family:'Share Tech Mono',monospace;font-size:.7rem;
+  color:var(--dim);margin-top:4px}
+.dim{color:var(--dim);font-size:.8rem;margin-top:4px}
+footer{text-align:center;padding:20px;color:var(--dim);
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  letter-spacing:2px;border-top:1px solid var(--border);margin-top:20px}
+@media(max-width:700px){
+  header{padding:20px}.logo{font-size:2rem}
+  main{padding:16px}.crawl-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="pulse-bar"></div>
+<header>
+  <div class="logo">RECON<span>47</span></div>
+  <div class="tagline">AUTOMATED RECONNAISSANCE &amp; VULNERABILITY SCANNER  |  AUTHOR: MUNIA936</div>
+  <div class="meta-row">
+    <div class="meta-chip"><label>Target</label><span>testphp.vulnweb.com</span></div>
+    <div class="meta-chip"><label>Scan Time</label><span>2026-05-17T03:24:00</span></div>
+    <div class="meta-chip"><label>Vulnerabilities</label><span style="color:var(--red)">0</span></div>
+    <div class="meta-chip"><label>Subdomains</label><span>0</span></div>
+    <div class="meta-chip"><label>Open Ports</label><span>0</span></div>
+    <div class="meta-chip"><label>Status</label><span style="color:var(--green)">COMPLETE</span></div>
+  </div>
+</header>
+<main>
+<div class="card">
+  <div class="card-hdr">◈  VULNERABILITY SUMMARY</div>
+  <div class="card-body">
+    <div class="sev-bar">
+      <div class="sev-badge" style="background:#ff1744;color:#000"><span>0</span><em>CRITICAL</em></div><div class="sev-badge" style="background:#ff5252;color:#000"><span>0</span><em>HIGH</em></div><div class="sev-badge" style="background:#ffcc00;color:#000"><span>0</span><em>MEDIUM</em></div><div class="sev-badge" style="background:#00d4ff;color:#000"><span>0</span><em>LOW</em></div><div class="sev-badge" style="background:#aaaaaa;color:#000"><span>0</span><em>INFO</em></div>
+    </div>
+  </div>
+</div><div class="card"><div class="card-hdr">◈  TARGET OVERVIEW</div><div class="card-body"><table><tr><td>Target</td><td>testphp.vulnweb.com</td></tr><tr><td>IP Address</td><td>44.228.249.3</td></tr><tr><td>Scan Time</td><td>2026-05-17T03:24:00.944794</td></tr><tr><td>Technologies</td><td>Unknown</td></tr><tr><td>HTTP Status</td><td>None</td></tr><tr><td>Modules Run</td><td>WHOIS, DNS, Subdomains, Ports, Headers, Crawler, VulnScan</td></tr></table></div></div>
+<div class="card"><div class="card-hdr">◈  WHOIS</div><div class="card-body"><table><tr><td>Registrar</td><td>GANDI SAS</td></tr><tr><td>Creation Date</td><td>[datetime.datetime(2010, 6, 14, 7, 50, 29), datetime.datetime(2010, 6, 14, 5, 50, 29)]</td></tr><tr><td>Expiry Date</td><td>2027-06-14 07:50:29</td></tr><tr><td>Name Servers</td><td>NS-105-A.GANDI.NET, NS-11-B.GANDI.NET, NS-140-C.GANDI.NET</td></tr><tr><td>Country</td><td>MT</td></tr><tr><td>Organization</td><td>Invicti Security Limited</td></tr><tr><td>Registrant</td><td>REDACTED FOR PRIVACY</td></tr><tr><td>Emails</td><td>abuse@support.gandi.net, e7c92ba29faca2e997bfc9ce58d5c661-57148476@contact.gandi.net</td></tr></table></div></div>
+<div class="card"><div class="card-hdr">◈  DNS RECORDS</div><div class="card-body"><table><tr><td>A</td><td>44.228.249.3</td></tr><tr><td>TXT</td><td>"google-site-verification:toEctYsulNIxgraKk7H3z58PCyz2IOCc36pIupEPmYQ"</td></tr></table></div></div>
+<div class="card"><div class="card-hdr">◈  HTTP SECURITY HEADERS</div><div class="card-body"><table><tr><td>Server</td><td>N/A</td></tr><tr><td>Technologies</td><td>N/A</td></tr><tr><td>Missing Headers</td><td>None ✔</td></tr><tr><td>Cookie Issues</td><td>0</td></tr></table></div></div>
+<div class="card"><div class="card-hdr">◈  CRAWL RESULTS</div><div class="card-body">
+<div class="crawl-grid">
+  <div>
+    <div class="sub-hdr">URLs (0 total)</div>
+    
+    
+  </div>
+  <div>
+    <div class="sub-hdr">JavaScript Files (0)</div>
+    
+  </div>
+  <div>
+    <div class="sub-hdr">Parameters (0)</div>
+    
+  </div>
+  <div>
+    <div class="sub-hdr">Interesting Endpoints (0)</div>
+    
+  </div>
+</div></div></div>
+</main>
+<footer>
+  RECON47 v2.0  &nbsp;·&nbsp;  AUTHOR: MUNIA936  &nbsp;·&nbsp;
+  FOR AUTHORIZED PENETRATION TESTING ONLY  &nbsp;·&nbsp;  2026-05-17
+</footer>
+</body>
+</html>

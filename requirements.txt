@@ -1,0 +1,11 @@
+# Core (required)
+dnspython>=2.3.0
+python-whois>=0.8.0
+reportlab>=4.0.0
+
+# Optional — AI summary
+anthropic>=0.20.0
+
+# External tools (system-level, install separately)
+# nikto   → sudo apt install nikto
+# nuclei  → go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
